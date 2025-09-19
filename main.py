@@ -5,7 +5,9 @@ import os
 
 app = FastAPI()
 
-# CORS
+# --- Config Gemini ---
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,13 +16,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# API key từ Render
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-
-model = genai.GenerativeModel("gemini-1.5-flash")
-
-conversations = {}
 appointments = []
+conversations = {}
 
 @app.post("/api/message")
 async def message(req: Request):
@@ -28,22 +25,26 @@ async def message(req: Request):
     user = data.get("username")
     msg = data.get("message")
 
-    if not user or not msg:
-        return {"reply": "Vui lòng nhập tên và tin nhắn."}
-
+    # Nếu là tin nhắn đầu tiên thì thêm prompt hướng dẫn
     if user not in conversations:
         conversations[user] = []
 
-    # Thêm user message
-    conversations[user].append({"role": "user", "parts": [msg]})
+    conversations[user].append(f"Người dùng: {msg}")
 
     try:
-        # Gửi toàn bộ history cho Gemini
-        response = model.generate_content(conversations[user])
-        reply = response.text
+        model = genai.GenerativeModel("gemini-1.5-flash")
 
-        # Thêm assistant reply
-        conversations[user].append({"role": "model", "parts": [reply]})
+        # Gom toàn bộ lịch sử hội thoại thành 1 prompt
+        prompt = (
+            "Bạn là một trợ lý y tế hữu ích. "
+            "Hãy trả lời ngắn gọn, chính xác và thân thiện.\n\n"
+        )
+        prompt += "\n".join(conversations[user])
+
+        response = model.generate_content(prompt)
+
+        reply = response.text
+        conversations[user].append(f"Trợ lý: {reply}")
     except Exception as e:
         reply = f"Lỗi gọi Gemini API: {e}"
 
