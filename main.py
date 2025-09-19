@@ -4,10 +4,11 @@ import os
 import google.generativeai as genai
 
 # ====== Cấu hình Gemini ======
-API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyAWIZvCpHrKdPceh7mhtr13E4VHghbfgCQ")
-genai.configure(api_key=API_KEY)
+API_KEY = os.getenv("GEMINI_API_KEY")  # lấy từ biến môi trường trên Render
+if not API_KEY:
+    raise ValueError("Chưa cấu hình GEMINI_API_KEY trong Render")
 
-# Chọn model Gemini
+genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 # ====== Khởi tạo FastAPI ======
@@ -15,17 +16,16 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Cho phép frontend gọi từ bất kỳ domain nào
+    allow_origins=["*"],  # cho phép GitHub Pages gọi API
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Bộ nhớ hội thoại & lịch hẹn
 appointments = []
 conversations = {}
 
-# ====== API chat ======
+# ====== API Chat ======
 @app.post("/api/message")
 async def message(req: Request):
     data = await req.json()
@@ -35,7 +35,6 @@ async def message(req: Request):
     if not user or not msg:
         return {"reply": "Vui lòng nhập tên và tin nhắn."}
 
-    # Nếu user chưa có hội thoại thì khởi tạo
     if user not in conversations:
         conversations[user] = [
             {"role": "system", "content": "Bạn là một trợ lí y tế hữu ích."}
@@ -44,7 +43,6 @@ async def message(req: Request):
     conversations[user].append({"role": "user", "content": msg})
 
     try:
-        # Gửi lịch sử chat vào Gemini
         history = [
             {"role": m["role"], "parts": [m["content"]]}
             for m in conversations[user]
@@ -52,21 +50,21 @@ async def message(req: Request):
 
         response = model.generate_content(history)
         reply = response.text
-
         conversations[user].append({"role": "assistant", "content": reply})
-
     except Exception as e:
         reply = f"Lỗi gọi Gemini API: {e}"
 
     return {"reply": reply}
 
-# ====== API lấy lịch hẹn ======
+
+# ====== API Lịch hẹn ======
 @app.get("/api/appointments")
 async def get_appts(user: str):
     user_appts = [a for a in appointments if a["user"] == user]
     return {"appointments": user_appts}
 
-# ====== API đặt lịch ======
+
+# ====== API Đặt lịch ======
 @app.post("/api/book")
 async def book(req: Request):
     data = await req.json()
