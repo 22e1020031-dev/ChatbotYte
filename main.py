@@ -1,31 +1,27 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-import os
 import google.generativeai as genai
+import os
 
-# ====== Cấu hình Gemini ======
-API_KEY = os.getenv("GEMINI_API_KEY")  # lấy từ biến môi trường trên Render
-if not API_KEY:
-    raise ValueError("Chưa cấu hình GEMINI_API_KEY trong Render")
-
-genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash")
-
-# ====== Khởi tạo FastAPI ======
 app = FastAPI()
 
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # cho phép GitHub Pages gọi API
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-appointments = []
-conversations = {}
+# API key từ Render
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
-# ====== API Chat ======
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+conversations = {}
+appointments = []
+
 @app.post("/api/message")
 async def message(req: Request):
     data = await req.json()
@@ -36,37 +32,30 @@ async def message(req: Request):
         return {"reply": "Vui lòng nhập tên và tin nhắn."}
 
     if user not in conversations:
-        # Không dùng role "system"
-        conversations[user] = [
-            {"role": "user", "content": "Bạn là một trợ lí y tế hữu ích, hãy hỗ trợ tôi."}
-        ]
+        conversations[user] = []
 
-    conversations[user].append({"role": "user", "content": msg})
+    # Thêm user message
+    conversations[user].append({"role": "user", "parts": [msg]})
 
     try:
-        history = [
-            {"role": m["role"], "parts": [m["content"]]}
-            for m in conversations[user]
-        ]
-
-        response = model.generate_content(history)
+        # Gửi toàn bộ history cho Gemini
+        response = model.generate_content(conversations[user])
         reply = response.text
-        conversations[user].append({"role": "model", "content": reply})
+
+        # Thêm assistant reply
+        conversations[user].append({"role": "model", "parts": [reply]})
     except Exception as e:
         reply = f"Lỗi gọi Gemini API: {e}"
 
     return {"reply": reply}
 
 
-
-# ====== API Lịch hẹn ======
 @app.get("/api/appointments")
 async def get_appts(user: str):
     user_appts = [a for a in appointments if a["user"] == user]
     return {"appointments": user_appts}
 
 
-# ====== API Đặt lịch ======
 @app.post("/api/book")
 async def book(req: Request):
     data = await req.json()
