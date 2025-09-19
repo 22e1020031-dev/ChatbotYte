@@ -5,7 +5,7 @@ import os
 
 app = FastAPI()
 
-# Lấy API key từ Render Environment
+# Lấy API key từ Render Environmentd
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Cấu hình model Gemini
