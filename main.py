@@ -36,8 +36,9 @@ async def message(req: Request):
         return {"reply": "Vui lòng nhập tên và tin nhắn."}
 
     if user not in conversations:
+        # Không dùng role "system"
         conversations[user] = [
-            {"role": "system", "content": "Bạn là một trợ lí y tế hữu ích."}
+            {"role": "user", "content": "Bạn là một trợ lí y tế hữu ích, hãy hỗ trợ tôi."}
         ]
 
     conversations[user].append({"role": "user", "content": msg})
@@ -50,11 +51,12 @@ async def message(req: Request):
 
         response = model.generate_content(history)
         reply = response.text
-        conversations[user].append({"role": "assistant", "content": reply})
+        conversations[user].append({"role": "model", "content": reply})
     except Exception as e:
         reply = f"Lỗi gọi Gemini API: {e}"
 
     return {"reply": reply}
+
 
 
 # ====== API Lịch hẹn ======
