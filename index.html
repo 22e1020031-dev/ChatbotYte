@@ -1,139 +1,330 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Trợ lí Y tế</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, Noto Sans, "Apple Color Emoji","Segoe UI Emoji"; }
+    .scrollbar-thin { scrollbar-width: thin; }
+    .scrollbar-thin::-webkit-scrollbar { height: 8px; width: 8px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { border-radius: 8px; }
+  </style>
 </head>
-<body class="bg-slate-900 text-white">
-  <main class="grid grid-cols-[70%_30%] gap-4 h-screen p-4">
-    
-    <!-- Ô Chat (70%) -->
-    <section class="bg-slate-800 rounded-2xl shadow-sm border border-slate-700 flex flex-col">
-      <header class="p-4 border-b border-slate-700">
-        <h1 class="text-2xl font-bold">💬 Trợ lí Y tế</h1>
-      </header>
-      <div id="chatHistory" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
-      <div class="border-t border-slate-700 p-3">
-        <div class="flex gap-2 items-end">
-          <textarea id="userInput" rows="2" placeholder="Bạn muốn hỏi gì?"
-            class="flex-1 resize-none px-3 py-2 rounded-2xl bg-slate-900 border border-slate-700 text-white"></textarea>
-          <button id="sendBtn" class="px-4 py-2 rounded-2xl bg-indigo-600 text-white">Gửi</button>
-        </div>
-        <div class="mt-3">
-          <label class="block text-sm mb-1">Chọn giọng đọc:</label>
-          <select id="voiceSelect" class="w-full px-2 py-2 rounded bg-slate-900 border border-slate-700 text-white"></select>
-        </div>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 min-h-screen">
+  <div class="max-w-5xl mx-auto p-4 sm:p-6">
+    <!-- Header -->
+    <header class="flex items-center justify-between gap-4 mb-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold">Trợ lí Y tế</h1>
       </div>
-    </section>
-
-    <!-- Ô Đặt lịch (30%) -->
-    <section class="bg-slate-800 rounded-2xl shadow-sm border border-slate-700 flex flex-col">
-      <header class="p-4 border-b border-slate-700">
-        <h2 class="text-xl font-semibold">📅 Đặt lịch khám</h2>
-      </header>
-      <div class="flex-1 p-4 overflow-y-auto">
-        <h3 class="font-medium mb-2">Lịch hẹn của tôi</h3>
-        <p class="text-sm text-slate-400 mb-4">Bạn chưa có lịch hẹn nào.</p>
-        <h3 class="font-medium mb-2">Đặt lịch nhanh</h3>
-        <form class="space-y-3">
-          <input type="text" placeholder="Phòng khám"
-            class="w-full px-3 py-2 border border-slate-700 rounded-lg bg-slate-900 text-white">
-          <input type="date"
-            class="w-full px-3 py-2 border border-slate-700 rounded-lg bg-slate-900 text-white">
-          <input type="time"
-            class="w-full px-3 py-2 border border-slate-700 rounded-lg bg-slate-900 text-white">
-          <textarea placeholder="Ghi chú"
-            class="w-full px-3 py-2 border border-slate-700 rounded-lg bg-slate-900 text-white"></textarea>
-          <button type="submit"
-            class="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500">
-            Đặt lịch
-          </button>
-        </form>
+      <div class="flex items-center gap-2">
+        <input id="username" type="text" placeholder="Tên của bạn" class="px-3 py-2 rounded-xl bg-white/80 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring focus:ring-indigo-500/30" />
+        <button id="saveNameBtn" class="px-3 py-2 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-500">Lưu tên</button>
       </div>
-    </section>
+    </header>
 
-  </main>
+    <!-- Main layout -->
+    <div class="grid md:grid-cols-3 gap-4">
+      <!-- Chat Panel -->
+      <section class="md:col-span-2 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-[72vh]">
+        <div id="chatHistory" class="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+          <!-- Messages injected here -->
+        </div>
+        <div class="border-t border-slate-100 dark:border-slate-700 p-3">
+          <div class="flex gap-2 items-end">
+            <textarea id="userInput" rows="2" placeholder="Bạn muốn hỏi gì? (ví dụ: cách phòng cảm cúm, tìm phòng khám gần đây, đặt lịch...)" class="flex-1 resize-none px-3 py-2 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring focus:ring-indigo-500/30"></textarea>
+            <button id="sendBtn" class="px-4 py-2 rounded-2xl bg-indigo-600 text-white font-semibold hover:bg-indigo-500">Gửi</button>
+            <button id="voiceBtn" class="px-4 py-2 rounded-2xl bg-rose-600 text-white font-semibold hover:bg-rose-500">🎤</button>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-2 text-sm">
+            <button class="quickCmd px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-700" data-text="xem lịch">Xem lịch</button>
+            <button class="quickCmd px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-700" data-text="đặt lịch">Đặt lịch</button>
+            <button class="quickCmd px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-700" data-text="định nghĩa cảm cúm">Định nghĩa bệnh</button>
+            <button class="quickCmd px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-700" data-text="phòng ngừa sốt xuất huyết">Phòng ngừa</button>
+          </div>
+          <!-- Chọn giọng đọc -->
+          <div class="mt-3">
+            <label for="voiceSelect" class="block text-sm mb-1">Chọn giọng đọc:</label>
+            <select id="voiceSelect" class="w-full px-2 py-1 rounded border dark:bg-slate-900"></select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Appointments & Booking -->
+      <aside class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 space-y-4 h-[72vh] overflow-y-auto scrollbar-thin">
+        <div>
+          <h2 class="font-semibold text-lg mb-2">Lịch hẹn của tôi</h2>
+          <div class="flex items-center gap-2 mb-2">
+            <button id="refreshApptBtn" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700">Tải lịch</button>
+          </div>
+          <ul id="apptList" class="space-y-2"></ul>
+        </div>
+        <hr class="border-slate-200 dark:border-slate-700" />
+        <div>
+          <h2 class="font-semibold text-lg mb-2">Đặt lịch nhanh</h2>
+          <form id="bookForm" class="space-y-3">
+            <div>
+              <label class="block text-sm mb-1">Phòng khám</label>
+              <input id="clinic" type="text" required placeholder="VD: Phòng khám Đa khoa ABC" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="date" class="block mb-2">Ngày khám</label>
+                <input type="date" id="date" name="date" class="w-full p-2 border rounded" required>
+              </div>
+              <div>
+                <label for="time" class="block mb-2">Giờ khám</label>
+                <input type="time" id="time" name="time" class="w-full p-2 border rounded" required>
+              </div>
+            </div>
+            <button type="submit" class="w-full px-3 py-2 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-500">Đặt lịch</button>
+          </form>
+        </div>
+      </aside>
+    </div>
+  </div>
 
   <script>
-    const chatHistory = document.getElementById("chatHistory");
-    const userInput = document.getElementById("userInput");
-    const sendBtn = document.getElementById("sendBtn");
+    const API_BASE = "https://chatbotyte-3.onrender.com";
+
+    const chatHistory = document.getElementById('chatHistory');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const voiceBtn = document.getElementById('voiceBtn');
+    const usernameEl = document.getElementById('username');
+    const saveNameBtn = document.getElementById('saveNameBtn');
+    const refreshApptBtn = document.getElementById('refreshApptBtn');
+    const apptList = document.getElementById('apptList');
+    const clinicEl = document.getElementById('clinic');
+    const dateEl = document.getElementById('date');
+    const timeEl = document.getElementById('time');
+    const bookForm = document.getElementById('bookForm');
     const voiceSelect = document.getElementById("voiceSelect");
 
-    // Load danh sách giọng đọc
+    // Lưu tên
+    const persistedName = localStorage.getItem('health_username');
+    if (persistedName) usernameEl.value = persistedName;
+
+    saveNameBtn.addEventListener('click', () => {
+      const name = usernameEl.value.trim();
+      if (!name) { alert('Vui lòng nhập tên.'); return; }
+      localStorage.setItem('health_username', name);
+      toast('Đã lưu tên: ' + name);
+    });
+
+    document.querySelectorAll('.quickCmd').forEach(b => {
+      b.addEventListener('click', () => {
+        userInput.value = b.dataset.text;
+        userInput.focus();
+      });
+    });
+
+    sendBtn.addEventListener('click', sendMessage);
+
+    // ✅ Enter để gửi, Shift+Enter để xuống dòng
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // ========== SPEECH SYNTHESIS ==========
     function loadVoices() {
       const voices = speechSynthesis.getVoices();
-      voiceSelect.innerHTML = voices.map(v => 
-        `<option value="${v.name}">${v.name} (${v.lang})</option>`
-      ).join("");
+      voiceSelect.innerHTML = '<option value="">Chọn giọng đọc</option>';
+      voices.forEach((v) => {
+        const opt = document.createElement("option");
+        opt.value = v.name;
+        opt.textContent = `${v.name} (${v.lang})`;
+        voiceSelect.appendChild(opt);
+      });
     }
     speechSynthesis.onvoiceschanged = loadVoices;
+    loadVoices();
 
     // Hàm đọc văn bản
     function speakText(text) {
       if (!text) return;
-      speechSynthesis.cancel(); // ngắt giọng cũ
+    
+      // Dừng mọi giọng đang đọc trước đó
+      speechSynthesis.cancel();
+    
       const utter = new SpeechSynthesisUtterance(text.replace(/[#*_`>]/g,""));
       const selectedVoice = voiceSelect.value;
+    
       if (selectedVoice) {
         const voices = speechSynthesis.getVoices();
         const match = voices.find(v => v.name === selectedVoice);
         if (match) utter.voice = match;
       }
+    
       speechSynthesis.speak(utter);
     }
-
-    // Thêm tin nhắn vào chat
+    
+    // Hàm thêm tin nhắn
     function addMsg(role, text) {
       const wrap = document.createElement('div');
       wrap.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+    
       const bubble = document.createElement('div');
       bubble.className = `max-w-[85%] px-3 py-2 rounded-2xl shadow-sm border text-sm whitespace-pre-wrap ${
         role === 'user'
           ? 'bg-indigo-600 text-white border-indigo-500'
-          : 'bg-slate-900 border-slate-700'
+          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'
       }`;
       bubble.innerHTML = marked.parse(text);
       wrap.appendChild(bubble);
-
-      // Nếu là bot thì thêm nút đọc/dừng
+    
+      // Nếu là bot => thêm nút Đọc & Dừng
       if (role === "assistant") {
         const controls = document.createElement("div");
         controls.className = "flex gap-2 ml-2";
-
+    
         const readBtn = document.createElement("button");
         readBtn.textContent = "🔊 Đọc";
-        readBtn.className = "px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-500";
+        readBtn.className =
+          "px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-500";
         readBtn.onclick = () => speakText(text);
-
+    
         const stopBtn = document.createElement("button");
         stopBtn.textContent = "⏹ Dừng";
-        stopBtn.className = "px-2 py-1 rounded bg-gray-600 text-white text-xs hover:bg-gray-500";
+        stopBtn.className =
+          "px-2 py-1 rounded bg-gray-600 text-white text-xs hover:bg-gray-500";
         stopBtn.onclick = () => speechSynthesis.cancel();
-
+    
         controls.appendChild(readBtn);
         controls.appendChild(stopBtn);
         wrap.appendChild(controls);
       }
-
+    
       chatHistory.appendChild(wrap);
       chatHistory.scrollTop = chatHistory.scrollHeight;
     }
 
-    // Gửi tin nhắn
-    sendBtn.onclick = () => {
-      const text = userInput.value.trim();
-      if (!text) return;
-      addMsg("user", text);
-      userInput.value = "";
-      // Giả lập phản hồi bot
-      setTimeout(() => {
-        addMsg("assistant", "Xin chào! Tôi có thể giúp gì cho bạn?");
-      }, 800);
-    };
+    function toast(msg) {
+      const t = document.createElement('div');
+      t.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-4 py-2 rounded-xl text-sm shadow-lg';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2200);
+    }
+
+    async function sendMessage() {
+      const name = (usernameEl.value || '').trim();
+      const message = (userInput.value || '').trim();
+      if (!name) { alert('Hãy nhập và lưu tên trước.'); return; }
+      if (!message) return;
+      addMsg('user', message);
+      userInput.value = '';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: name, message })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        addMsg('assistant', data.reply || '');
+      } catch (err) {
+        console.error(err);
+        addMsg('assistant', 'Đã có lỗi xảy ra khi gọi backend.');
+      }
+    }
+
+    async function loadAppointments() {
+      const name = (usernameEl.value || '').trim();
+      if (!name) { alert('Hãy nhập và lưu tên trước.'); return; }
+      apptList.innerHTML = '<li class="text-slate-500">Đang tải...</li>';
+      try {
+        const res = await fetch(`${API_BASE}/api/appointments?user=${encodeURIComponent(name)}`);
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        renderAppointments(data.appointments || []);
+      } catch (err) {
+        console.error(err);
+        apptList.innerHTML = '<li class="text-rose-500">Không tải được lịch hẹn.</li>';
+      }
+    }
+
+    function renderAppointments(list) {
+      apptList.innerHTML = '';
+      if (!list.length) {
+        apptList.innerHTML = '<li class="text-slate-500">Bạn chưa có lịch hẹn nào.</li>';
+        return;
+      }
+      for (const a of list) {
+        const li = document.createElement('li');
+        li.className = 'p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700';
+        li.innerHTML = `<div class="font-medium">${a.clinic}</div><div class="text-sm text-slate-500">${a.date} ${a.time}</div>`;
+        apptList.appendChild(li);
+      }
+    }
+    refreshApptBtn.addEventListener('click', loadAppointments);
+
+    bookForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = (usernameEl.value || '').trim();
+      if (!name) { alert('Hãy nhập và lưu tên trước.'); return; }
+      const payload = {
+        user: name,
+        clinic: clinicEl.value.trim(),
+        date: dateEl.value.trim(),
+        time: timeEl.value.trim(),
+      };
+      if (!payload.clinic || !payload.date || !payload.time) { alert('Điền đủ thông tin.'); return; }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/book`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        await fetch("https://script.google.com/macros/s/AKfycbzWE79uuLGZMV9PiyruPfj4tGzJH5ttiZKg-EYztZgADslNojf9Bh5N4uHhtTljksDB/exec", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        toast(data.message || 'Đặt lịch thành công');
+        clinicEl.value = '';
+        dateEl.value = '';
+        timeEl.value = '';
+        loadAppointments();
+      } catch (err) {
+        console.error(err);
+        alert('Đặt lịch thất bại.');
+      }
+    });
+
+    // ✅ Voice input
+    let recognition;
+    if ('webkitSpeechRecognition' in window) {
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = "vi-VN";
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.onresult = (e) => {
+        userInput.value = e.results[0][0].transcript;
+      };
+    }
+
+    voiceBtn.addEventListener('click', () => {
+      if (!recognition) { alert("Trình duyệt không hỗ trợ voice"); return; }
+      recognition.start();
+      toast("🎙️ Đang nghe...");
+    });
+
+    if (persistedName) setTimeout(loadAppointments, 300);
   </script>
 </body>
 </html>
