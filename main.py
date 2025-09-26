@@ -1,11 +1,11 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from groq import Groq
-import json
+import os
 
 app = FastAPI()
 
-# Cho phép frontend (index.html) gọi API
+# Cho phép frontend gọi API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -14,7 +14,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = Groq(api_key="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")
+# Lấy API key từ biến môi trường
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    raise RuntimeError("❌ Chưa cấu hình GROQ_API_KEY trong biến môi trường")
+
+client = Groq(api_key=GROQ_API_KEY)
 
 appointments = []
 conversations = {}
@@ -32,11 +37,15 @@ async def message(req: Request):
 
     conversations[user].append({"role": "user", "content": msg})
 
+    # Giữ lịch sử hội thoại ngắn gọn (20 message gần nhất)
+    if len(conversations[user]) > 40:
+        conversations[user] = conversations[user][-40:]
+
     try:
         response = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+            model="mixtral-8x7b-32768",  # ✅ model hợp lệ của Groq
             messages=conversations[user],
-            max_completion_tokens=2048
+            max_tokens=512
         )
         reply = response.choices[0].message.content
         conversations[user].append({"role": "assistant", "content": reply})
