@@ -171,6 +171,7 @@
     }
     
     // Hàm thêm tin nhắn
+    // Thêm tin nhắn vào chat
     function addMsg(role, text) {
       const wrap = document.createElement('div');
       wrap.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
@@ -179,36 +180,54 @@
       bubble.className = `max-w-[85%] px-3 py-2 rounded-2xl shadow-sm border text-sm whitespace-pre-wrap ${
         role === 'user'
           ? 'bg-indigo-600 text-white border-indigo-500'
-          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'
+          : 'bg-slate-900 border-slate-700'
       }`;
       bubble.innerHTML = marked.parse(text);
       wrap.appendChild(bubble);
     
-      // Nếu là bot => thêm nút Đọc & Dừng
+      // Nếu là bot thì thêm nút đọc/dừng
       if (role === "assistant") {
-        const controls = document.createElement("div");
-        controls.className = "flex gap-2 ml-2";
+        const toggleBtn = document.createElement("button");
+        toggleBtn.textContent = "🔊 Đọc";
+        toggleBtn.className = "ml-2 px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-500";
     
-        const readBtn = document.createElement("button");
-        readBtn.textContent = "🔊 Đọc";
-        readBtn.className =
-          "px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-500";
-        readBtn.onclick = () => speakText(text);
+        let isSpeaking = false; // trạng thái đọc
     
-        const stopBtn = document.createElement("button");
-        stopBtn.textContent = "⏹ Dừng";
-        stopBtn.className =
-          "px-2 py-1 rounded bg-gray-600 text-white text-xs hover:bg-gray-500";
-        stopBtn.onclick = () => speechSynthesis.cancel();
+        toggleBtn.onclick = () => {
+          if (!isSpeaking) {
+            // Bắt đầu đọc
+            speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(text.replace(/[#*_`>]/g,""));
+            const selectedVoice = voiceSelect.value;
+            if (selectedVoice) {
+              const voices = speechSynthesis.getVoices();
+              const match = voices.find(v => v.name === selectedVoice);
+              if (match) utter.voice = match;
+            }
     
-        controls.appendChild(readBtn);
-        controls.appendChild(stopBtn);
-        wrap.appendChild(controls);
+            utter.onend = () => {
+              isSpeaking = false;
+              toggleBtn.textContent = "🔊 Đọc";
+            };
+    
+            speechSynthesis.speak(utter);
+            isSpeaking = true;
+            toggleBtn.textContent = "⏹ Dừng";
+          } else {
+            // Ngừng đọc
+            speechSynthesis.cancel();
+            isSpeaking = false;
+            toggleBtn.textContent = "🔊 Đọc";
+          }
+        };
+    
+        wrap.appendChild(toggleBtn);
       }
     
       chatHistory.appendChild(wrap);
       chatHistory.scrollTop = chatHistory.scrollHeight;
     }
+
 
     function toast(msg) {
       const t = document.createElement('div');
