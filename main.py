@@ -43,7 +43,7 @@ async def message(req: Request):
 
     try:
         response = client.chat.completions.create(
-            model="mixtral-8x7b-32768",  # ✅ model hợp lệ của Groq
+            model="llama-3.3-70b-versatile",
             messages=conversations[user],
             max_tokens=512
         )
