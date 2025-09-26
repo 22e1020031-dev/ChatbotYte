@@ -50,6 +50,11 @@
             <button class="quickCmd px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-700" data-text="định nghĩa cảm cúm">Định nghĩa bệnh</button>
             <button class="quickCmd px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-700" data-text="phòng ngừa sốt xuất huyết">Phòng ngừa</button>
           </div>
+          <!-- Chọn giọng đọc -->
+          <div class="mt-3">
+            <label for="voiceSelect" class="block text-sm mb-1">Chọn giọng đọc:</label>
+            <select id="voiceSelect" class="w-full px-2 py-1 rounded border dark:bg-slate-900"></select>
+          </div>
         </div>
       </section>
 
@@ -102,7 +107,9 @@
     const dateEl = document.getElementById('date');
     const timeEl = document.getElementById('time');
     const bookForm = document.getElementById('bookForm');
+    const voiceSelect = document.getElementById("voiceSelect");
 
+    // Lưu tên
     const persistedName = localStorage.getItem('health_username');
     if (persistedName) usernameEl.value = persistedName;
 
@@ -130,21 +137,52 @@
       }
     });
 
-    function addMsg(role, text, speak=false) {
+    // ========== SPEECH SYNTHESIS ==========
+    function loadVoices() {
+      const voices = speechSynthesis.getVoices();
+      voiceSelect.innerHTML = '<option value="">Chọn giọng đọc</option>';
+      voices.forEach((v) => {
+        const opt = document.createElement("option");
+        opt.value = v.name;
+        opt.textContent = `${v.name} (${v.lang})`;
+        voiceSelect.appendChild(opt);
+      });
+    }
+    speechSynthesis.onvoiceschanged = loadVoices;
+    loadVoices();
+
+    function speakText(text) {
+      if (!text) return;
+      const utter = new SpeechSynthesisUtterance(text.replace(/[#*_`>]/g,""));
+      const selectedVoice = voiceSelect.value;
+      if (selectedVoice) {
+        const voices = speechSynthesis.getVoices();
+        const match = voices.find(v => v.name === selectedVoice);
+        if (match) utter.voice = match;
+      }
+      speechSynthesis.speak(utter);
+    }
+
+    // ========== ADD MESSAGE ==========
+    function addMsg(role, text) {
       const wrap = document.createElement('div');
       wrap.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
       const bubble = document.createElement('div');
       bubble.className = `max-w-[85%] px-3 py-2 rounded-2xl shadow-sm border text-sm whitespace-pre-wrap ${role === 'user' ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'}`;
       bubble.innerHTML = marked.parse(text);
       wrap.appendChild(bubble);
+
+      // Nếu là bot => thêm nút 🔊
+      if (role === "assistant") {
+        const readBtn = document.createElement("button");
+        readBtn.textContent = "🔊 Đọc";
+        readBtn.className = "ml-2 px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-500";
+        readBtn.onclick = () => speakText(text);
+        wrap.appendChild(readBtn);
+      }
+
       chatHistory.appendChild(wrap);
       chatHistory.scrollTop = chatHistory.scrollHeight;
-
-      if (speak) {
-        const utterance = new SpeechSynthesisUtterance(text.replace(/[#*_`>]/g,""));
-        utterance.lang = "vi-VN";
-        speechSynthesis.speak(utterance);
-      }
     }
 
     function toast(msg) {
@@ -171,7 +209,7 @@
         });
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        addMsg('assistant', data.reply || '', true);
+        addMsg('assistant', data.reply || '');
       } catch (err) {
         console.error(err);
         addMsg('assistant', 'Đã có lỗi xảy ra khi gọi backend.');
