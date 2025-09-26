@@ -153,15 +153,22 @@
 
     function speakText(text) {
       if (!text) return;
+    
+      // Dừng mọi giọng đang đọc trước đó
+      speechSynthesis.cancel();
+    
       const utter = new SpeechSynthesisUtterance(text.replace(/[#*_`>]/g,""));
       const selectedVoice = voiceSelect.value;
+    
       if (selectedVoice) {
         const voices = speechSynthesis.getVoices();
         const match = voices.find(v => v.name === selectedVoice);
         if (match) utter.voice = match;
       }
+    
       speechSynthesis.speak(utter);
     }
+
 
     // ========== ADD MESSAGE ==========
     function addMsg(role, text) {
@@ -171,6 +178,11 @@
       bubble.className = `max-w-[85%] px-3 py-2 rounded-2xl shadow-sm border text-sm whitespace-pre-wrap ${role === 'user' ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'}`;
       bubble.innerHTML = marked.parse(text);
       wrap.appendChild(bubble);
+      const stopBtn = document.createElement("button");
+      stopBtn.textContent = "⏹ Dừng";
+      stopBtn.className = "ml-1 px-2 py-1 rounded bg-gray-600 text-white text-xs hover:bg-gray-500";
+      stopBtn.onclick = () => speechSynthesis.cancel();
+      wrap.appendChild(stopBtn);
 
       // Nếu là bot => thêm nút 🔊
       if (role === "assistant") {
