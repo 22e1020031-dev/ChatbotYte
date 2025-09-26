@@ -151,6 +151,7 @@
     speechSynthesis.onvoiceschanged = loadVoices;
     loadVoices();
 
+    // Hàm đọc văn bản
     function speakText(text) {
       if (!text) return;
     
@@ -168,31 +169,43 @@
     
       speechSynthesis.speak(utter);
     }
-
-
-    // ========== ADD MESSAGE ==========
+    
+    // Hàm thêm tin nhắn
     function addMsg(role, text) {
       const wrap = document.createElement('div');
       wrap.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+    
       const bubble = document.createElement('div');
-      bubble.className = `max-w-[85%] px-3 py-2 rounded-2xl shadow-sm border text-sm whitespace-pre-wrap ${role === 'user' ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'}`;
+      bubble.className = `max-w-[85%] px-3 py-2 rounded-2xl shadow-sm border text-sm whitespace-pre-wrap ${
+        role === 'user'
+          ? 'bg-indigo-600 text-white border-indigo-500'
+          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'
+      }`;
       bubble.innerHTML = marked.parse(text);
       wrap.appendChild(bubble);
-      const stopBtn = document.createElement("button");
-      stopBtn.textContent = "⏹ Dừng";
-      stopBtn.className = "ml-1 px-2 py-1 rounded bg-gray-600 text-white text-xs hover:bg-gray-500";
-      stopBtn.onclick = () => speechSynthesis.cancel();
-      wrap.appendChild(stopBtn);
-
-      // Nếu là bot => thêm nút 🔊
+    
+      // Nếu là bot => thêm nút Đọc & Dừng
       if (role === "assistant") {
+        const controls = document.createElement("div");
+        controls.className = "flex gap-2 ml-2";
+    
         const readBtn = document.createElement("button");
         readBtn.textContent = "🔊 Đọc";
-        readBtn.className = "ml-2 px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-500";
+        readBtn.className =
+          "px-2 py-1 rounded bg-emerald-600 text-white text-xs hover:bg-emerald-500";
         readBtn.onclick = () => speakText(text);
-        wrap.appendChild(readBtn);
+    
+        const stopBtn = document.createElement("button");
+        stopBtn.textContent = "⏹ Dừng";
+        stopBtn.className =
+          "px-2 py-1 rounded bg-gray-600 text-white text-xs hover:bg-gray-500";
+        stopBtn.onclick = () => speechSynthesis.cancel();
+    
+        controls.appendChild(readBtn);
+        controls.appendChild(stopBtn);
+        wrap.appendChild(controls);
       }
-
+    
       chatHistory.appendChild(wrap);
       chatHistory.scrollTop = chatHistory.scrollHeight;
     }
