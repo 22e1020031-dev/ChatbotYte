@@ -1,15 +1,20 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-import google.generativeai as genai
-import os
+from groq import Groq
+import json
 
 app = FastAPI()
 
-# Lấy API key từ Render Environmentd
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Cho phép frontend (index.html) gọi API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Cấu hình model Gemini
-model = genai.GenerativeModel("gemini-1.5-flash")
+client = Groq(api_key="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")
 
 appointments = []
 conversations = {}
@@ -21,19 +26,40 @@ async def message(req: Request):
     msg = data.get("message")
 
     if user not in conversations:
-        conversations[user] = []
-        # thêm câu mở đầu để định hướng
-        conversations[user].append(
-            {"role": "user", "parts": "Bạn là một trợ lí y tế hữu ích, hãy trả lời tự nhiên và dễ hiểu."}
-        )
+        conversations[user] = [
+            {"role": "system", "content": "Bạn là một trợ lí y tế hữu ích."}
+        ]
 
-    conversations[user].append({"role": "user", "parts": msg})
+    conversations[user].append({"role": "user", "content": msg})
 
     try:
-        response = model.generate_content(conversations[user])
-        reply = response.text
-        conversations[user].append({"role": "model", "parts": reply})
+        response = client.chat.completions.create(
+            model="openai/gpt-oss-120b",
+            messages=conversations[user],
+            max_completion_tokens=2048
+        )
+        reply = response.choices[0].message.content
+        conversations[user].append({"role": "assistant", "content": reply})
     except Exception as e:
-        reply = f"Lỗi gọi Gemini API: {e}"
+        reply = f"Lỗi gọi Groq API: {e}"
 
     return {"reply": reply}
+
+
+@app.get("/api/appointments")
+async def get_appts(user: str):
+    user_appts = [a for a in appointments if a["user"] == user]
+    return {"appointments": user_appts}
+
+
+@app.post("/api/book")
+async def book(req: Request):
+    data = await req.json()
+    appt = {
+        "user": data["user"],
+        "clinic": data["clinic"],
+        "date": data["date"],
+        "time": data["time"],
+    }
+    appointments.append(appt)
+    return {"message": "Đặt lịch thành công", "appointment": appt}
