@@ -152,23 +152,35 @@
     loadVoices();
 
     // Hàm đọc văn bản
+    // Gọi đọc văn bản (ưu tiên Android TTS nếu có, nếu không thì dùng speechSynthesis)
     function speakText(text) {
       if (!text) return;
     
-      // Dừng mọi giọng đang đọc trước đó
-      speechSynthesis.cancel();
-    
-      const utter = new SpeechSynthesisUtterance(text.replace(/[#*_`>]/g,""));
-      const selectedVoice = voiceSelect.value;
-    
-      if (selectedVoice) {
-        const voices = speechSynthesis.getVoices();
-        const match = voices.find(v => v.name === selectedVoice);
-        if (match) utter.voice = match;
+      if (window.Android && window.Android.speak) {
+        // ✅ chạy trên Android app
+        window.Android.speak(text);
+      } else {
+        // ✅ fallback: chạy trên trình duyệt (Web Speech API)
+        speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text.replace(/[#*_`>]/g,""));
+        speechSynthesis.speak(utter);
       }
-    
-      speechSynthesis.speak(utter);
     }
+    
+    // Khi bấm voice input (ưu tiên Android nếu có)
+    voiceBtn.addEventListener('click', () => {
+      if (window.Android && window.Android.startVoiceInput) {
+        // ✅ chạy Android native
+        window.Android.startVoiceInput();
+      } else if (recognition) {
+        // ✅ fallback: Web Speech API
+        recognition.start();
+        toast("🎙️ Đang nghe (Web API)...");
+      } else {
+        alert("Trình duyệt không hỗ trợ voice input");
+      }
+    });
+
     
     // Hàm thêm tin nhắn
     // Thêm tin nhắn vào chat
